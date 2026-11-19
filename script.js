@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-=======
+
 /*
  * General configuration for the outline heart effect (pinkboard)
  */
@@ -13,7 +12,6 @@ var settings = {
   },
 };
 
->>>>>>> 4b492e7bf85a59513bf11305e6fd108d13f3c320
 // Automatically play background music when the user interacts with the page (click/touch)
 document.addEventListener('click', function() {
     var audio = document.getElementById('bg-music');
@@ -407,7 +405,7 @@ if (playlistItems.length > 0 && audioPlayer) {
     });
   });
 }
-=======
+
 musicBtn.addEventListener("click", function () {
   musicModal.style.display = "block";
 });
@@ -435,4 +433,4 @@ playlistItems.forEach(function (item) {
     musicModal.style.display = "none"; // Close modal after selection
   });
 });
->>>>>>> 4b492e7bf85a59513bf11305e6fd108d13f3c320
+
