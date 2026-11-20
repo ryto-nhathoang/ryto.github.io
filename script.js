@@ -130,7 +130,7 @@ var totalPerimeter = 0;
   totalPerimeter = cumArcLength[TABLE_SIZE - 1] + Math.hypot(lastDx, lastDy);
 })();
 
-function getPointOnHeartByArcLength(u) {
+function getPointAndAngleOnHeart(u) {
   var target = (((u % 1.0) + 1.0) % 1.0) * totalPerimeter;
   var low = 0;
   var high = TABLE_SIZE - 1;
@@ -142,7 +142,30 @@ function getPointOnHeartByArcLength(u) {
       high = mid;
     }
   }
-  return heartCurvePts[low];
+  var pt = heartCurvePts[low];
+
+  // Calculate tangent direction along the heart contour
+  var nextIdx = (low + 4) % TABLE_SIZE;
+  var prevIdx = (low - 4 + TABLE_SIZE) % TABLE_SIZE;
+  var dx = heartCurvePts[nextIdx].x - heartCurvePts[prevIdx].x;
+  var dy = heartCurvePts[nextIdx].y - heartCurvePts[prevIdx].y;
+  var rawAngle = Math.atan2(dy, dx);
+
+  // Normalize angle to [-PI/2, PI/2] so text is never upside down
+  while (rawAngle > Math.PI / 2) rawAngle -= Math.PI;
+  while (rawAngle < -Math.PI / 2) rawAngle += Math.PI;
+
+  // Seamlessly transition angle specifically in the lower half (y > -1)
+  // so the bottom of the heart slopes gracefully like wings into the sharp tip
+  var blend = Math.max(0, Math.min(1, (pt.y + 1.0) / 5.0));
+  var angle = rawAngle * blend;
+
+  // Symmetric anchor at the very bottom tip
+  if (Math.abs(pt.x) < 0.5 && pt.y > 13.5) {
+    angle = 0;
+  }
+
+  return { pt: pt, angle: angle };
 }
 
 var heartTargetPositions = [];
@@ -171,7 +194,9 @@ function updateHeartTargets() {
 
     for (var i = 0; i < count; i++) {
       var u = (i + offset) / count;
-      var pt = getPointOnHeartByArcLength(u);
+      var data = getPointAndAngleOnHeart(u);
+      var pt = data.pt;
+      var angle = data.angle;
 
       // Alternating front and back placement with volumetric depth
       var side = (i % 2 === 0) ? 1 : -1;
@@ -184,7 +209,8 @@ function updateHeartTargets() {
       heartTargetPositions.push({
         x: (pt.x + jx) * heartScale * s,
         y: (pt.y + jy) * heartScale * s,
-        z: z
+        z: z,
+        angle: angle
       });
     }
   }
@@ -274,12 +300,24 @@ canvasText.addEventListener("wheel", function (e) {
   fov = Math.max(220, Math.min(900, fov));
 }, { passive: false });
 
+// Pre-cached font strings to eliminate string allocations and GC micro-stutter
+const FONT_CACHE = [];
+for (var f = 0; f <= 36; f++) {
+  FONT_CACHE[f] = f + 'px "微软雅黑", sans-serif';
+}
+
+function depthSort(a, b) {
+  return b.rz - a.rz;
+}
+
 function Heart3D(index) {
   this.index = index;
   this.initSpacePosition();
   this.x = this.spaceX;
   this.y = this.spaceY;
   this.z = this.spaceZ;
+  this.angle = 0;
+  this.targetAngle = 0;
   this.baseSize = Math.random() * 8 + 14;
   this.colorIndex = Math.floor(Math.random() * colors.length);
   this.maxOpacity = Math.random() * 0.2 + 0.8;
@@ -306,15 +344,18 @@ Heart3D.prototype.initSpacePosition = function () {
 Heart3D.prototype.updateTarget = function () {
   if (isHeartMode) {
     if (heartTargetPositions[this.index]) {
-      this.targetX = heartTargetPositions[this.index].x;
-      this.targetY = heartTargetPositions[this.index].y;
-      this.targetZ = heartTargetPositions[this.index].z;
+      var t = heartTargetPositions[this.index];
+      this.targetX = t.x;
+      this.targetY = t.y;
+      this.targetZ = t.z;
+      this.targetAngle = t.angle;
     }
   } else {
-    this.initSpacePosition();
+    // Zero-overhead target assignment: reuse pre-initialized space coordinates without recalculation
     this.targetX = this.spaceX;
     this.targetY = this.spaceY;
     this.targetZ = this.spaceZ;
+    this.targetAngle = 0;
   }
 };
 
@@ -324,18 +365,15 @@ Heart3D.prototype.update = function () {
     this.x += (this.targetX - this.x) * 0.12;
     this.y += (this.targetY - this.y) * 0.12;
     this.z += (this.targetZ - this.z) * 0.12;
+    this.angle += (this.targetAngle - this.angle) * 0.12;
   } else {
     // Drift gently in 3D space
     this.spaceX += this.vx;
     this.spaceY += this.vy;
     this.spaceZ += this.vz;
 
-    var dist = Math.sqrt(
-      this.spaceX * this.spaceX +
-      this.spaceY * this.spaceY +
-      this.spaceZ * this.spaceZ
-    );
-    if (dist > spaceRadius) {
+    var distSq = this.spaceX * this.spaceX + this.spaceY * this.spaceY + this.spaceZ * this.spaceZ;
+    if (distSq > spaceRadius * spaceRadius) {
       this.vx = -this.vx;
       this.vy = -this.vy;
       this.vz = -this.vz;
@@ -344,6 +382,7 @@ Heart3D.prototype.update = function () {
     this.x += (this.spaceX - this.x) * 0.08;
     this.y += (this.spaceY - this.y) * 0.08;
     this.z += (this.spaceZ - this.z) * 0.08;
+    this.angle += (this.targetAngle - this.angle) * 0.08;
   }
 };
 
@@ -376,27 +415,32 @@ Heart3D.prototype.draw = function () {
   var depthFactor = (spaceRadius - this.rz) / (spaceRadius * 2);
   var alpha = isHeartMode
     ? this.maxOpacity
-    : Math.max(0.15, Math.min(1, depthFactor * 1.3)) * this.maxOpacity;
+    : Math.max(0.18, Math.min(1, depthFactor * 1.3)) * this.maxOpacity;
 
-  // Clean, readable font scaling: clear text without overwhelming the silhouette
-  var fontSize = isHeartMode
-    ? Math.max(9, Math.min(15, this.baseSize * scale * 0.52))
-    : Math.max(7, this.baseSize * scale);
+  // Quantized integer font size to prevent subpixel font engine re-parsing
+  var fontSize = (isHeartMode
+    ? Math.max(9, Math.min(14, this.baseSize * scale * 0.52))
+    : Math.max(7, this.baseSize * scale)) | 0;
 
-  ctxText.save();
-  ctxText.globalAlpha = alpha;
-  ctxText.font = `${fontSize}px "微软雅黑", sans-serif`;
-  ctxText.fillStyle = colors[this.colorIndex];
-  ctxText.textAlign = "center";
-  ctxText.textBaseline = "middle";
-
-  if (scale > 0.8) {
-    ctxText.shadowColor = colors[this.colorIndex];
-    ctxText.shadowBlur = isHeartMode ? 3 : 6;
+  var fontStr = FONT_CACHE[fontSize] || FONT_CACHE[12];
+  if (currentFont !== fontStr) {
+    ctxText.font = fontStr;
+    currentFont = fontStr;
   }
 
-  ctxText.fillText("💗i love you💗", screenX, screenY);
-  ctxText.restore();
+  ctxText.globalAlpha = alpha;
+  ctxText.fillStyle = colors[this.colorIndex];
+
+  // Rotate text to follow the heart's natural V-shape at the bottom
+  if (Math.abs(this.angle) > 0.015) {
+    var cos = Math.cos(this.angle);
+    var sin = Math.sin(this.angle);
+    ctxText.setTransform(cos, sin, -sin, cos, screenX, screenY);
+    ctxText.fillText("💗i love you💗", 0, 0);
+    ctxText.setTransform(1, 0, 0, 1, 0, 0);
+  } else {
+    ctxText.fillText("💗i love you💗", screenX, screenY);
+  }
 };
 
 function initTextCanvas() {
@@ -409,6 +453,8 @@ function initTextCanvas() {
   }
   requestAnimationFrame(renderTextCanvas);
 }
+
+var currentFont = "";
 
 function renderTextCanvas() {
   ctxText.clearRect(0, 0, ww, wh);
@@ -431,10 +477,13 @@ function renderTextCanvas() {
     hearts[i].project(cosY, sinY, cosX, sinX);
   }
 
-  // Sort back-to-front by depth so closer text renders over farther text
-  hearts.sort(function (a, b) {
-    return b.rz - a.rz;
-  });
+  // Pre-allocated static depth sort (no closure allocation per frame)
+  hearts.sort(depthSort);
+
+  // Set invariant text rendering properties once per frame
+  ctxText.textAlign = "center";
+  ctxText.textBaseline = "middle";
+  currentFont = "";
 
   for (var i = 0; i < hearts.length; i++) {
     hearts[i].draw();
