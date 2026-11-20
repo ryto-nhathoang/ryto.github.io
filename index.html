@@ -12,7 +12,86 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background: #000;
+            background: #06020c;
+        }
+
+        /* Ambient colored glow around the background */
+        .ambient-glow {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .ambient-glow .glow-circle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.42;
+            will-change: transform;
+            transform: translateZ(0);
+            animation: floatGlow 14s ease-in-out infinite alternate;
+        }
+
+        .glow-1 {
+            width: 520px;
+            height: 520px;
+            top: -140px;
+            left: -140px;
+            background: radial-gradient(circle, rgba(255, 75, 114, 0.45) 0%, rgba(168, 56, 255, 0.2) 35%, transparent 70%);
+        }
+
+        .glow-2 {
+            width: 540px;
+            height: 540px;
+            top: -120px;
+            right: -140px;
+            background: radial-gradient(circle, rgba(255, 185, 254, 0.45) 0%, rgba(235, 127, 192, 0.2) 35%, transparent 70%);
+            animation-delay: -3.5s;
+        }
+
+        .glow-3 {
+            width: 560px;
+            height: 560px;
+            bottom: -160px;
+            left: -120px;
+            background: radial-gradient(circle, rgba(134, 150, 231, 0.4) 0%, rgba(248, 214, 255, 0.2) 35%, transparent 70%);
+            animation-delay: -7s;
+        }
+
+        .glow-4 {
+            width: 520px;
+            height: 520px;
+            bottom: -140px;
+            right: -140px;
+            background: radial-gradient(circle, rgba(237, 176, 188, 0.4) 0%, rgba(255, 117, 117, 0.2) 35%, transparent 70%);
+            animation-delay: -10.5s;
+        }
+
+        .glow-center {
+            position: absolute;
+            width: 580px;
+            height: 580px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) translateZ(0);
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(219, 88, 180, 0.28) 0%, rgba(231, 187, 249, 0.12) 40%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+            will-change: transform;
+        }
+
+        @keyframes floatGlow {
+            0% {
+                transform: scale(1) translate(0, 0);
+            }
+            50% {
+                transform: scale(1.12) translate(25px, 20px);
+            }
+            100% {
+                transform: scale(0.92) translate(-20px, 25px);
+            }
         }
 
         canvas {
@@ -47,8 +126,16 @@
         <source src="in-the-shadow-of-the-sun.mp3" type="audio/mpeg">
     </audio>
 
-    <!-- Canvases for animations -->
-    <!-- <canvas id="pinkboard"></canvas> -->
+    <!-- Ambient glowing colors around background -->
+    <div class="ambient-glow">
+        <div class="glow-circle glow-1"></div>
+        <div class="glow-circle glow-2"></div>
+        <div class="glow-circle glow-3"></div>
+        <div class="glow-circle glow-4"></div>
+        <div class="glow-center"></div>
+    </div>
+
+    <!-- 3D Text Animation Canvas -->
     <canvas id="canvas"></canvas>
 
     <!-- External JavaScript file reference -->
