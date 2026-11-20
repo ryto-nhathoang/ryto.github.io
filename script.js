@@ -49,6 +49,7 @@ window.addEventListener('load', tryPlayMusic);
 /*
  * General configuration for the outline heart effect (pinkboard)
  */
+/*
 var settings = {
   particles: {
     length: 500, // Maximum amount of particles
@@ -59,9 +60,7 @@ var settings = {
   },
 };
 
-/*
- * Point class
- */
+
 var Point = (function () {
   function Point(x, y) {
     this.x = typeof x !== "undefined" ? x : 0;
@@ -87,9 +86,6 @@ var Point = (function () {
   return Point;
 })();
 
-/*
- * Particle class
- */
 var Particle = (function () {
   function Particle() {
     this.position = new Point();
@@ -130,9 +126,7 @@ var Particle = (function () {
   return Particle;
 })();
 
-/*
- * ParticlePool class
- */
+
 var ParticlePool = (function () {
   var particles,
     firstActive = 0,
@@ -184,9 +178,8 @@ var ParticlePool = (function () {
   return ParticlePool;
 })();
 
-/*
- * Main heart effect handler (Pinkboard)
- */
+//Main heart effect handler (Pinkboard)
+ 
 (function (canvas) {
   var context = canvas.getContext("2d"),
     particles = new ParticlePool(settings.particles.length),
@@ -271,7 +264,7 @@ var ParticlePool = (function () {
     render();
   }, 10);
 })(document.getElementById("pinkboard"));
-
+*/
 /*
  * Floating "i love you" text effect handler - more items, random appearance & half size (+5px font size)
  */
