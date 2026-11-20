@@ -1,21 +1,5 @@
 // Try to autoplay background music immediately, and fallback on first user interaction
 function tryPlayMusic() {
-
-/*
- * General configuration for the outline heart effect (pinkboard)
- */
-var settings = {
-  particles: {
-    length: 500, // Maximum amount of particles
-    duration: 2, // Particle duration in seconds
-    velocity: 100, // Particle velocity in pixels/sec
-    effect: -0.75, // Motion effect coefficient
-    size: 30, // Particle size in pixels
-  },
-};
-
-// Automatically play background music when the user interacts with the page (click/touch)
-document.addEventListener('click', function() {
     var audio = document.getElementById('bg-music');
     if (audio && audio.paused) {
         audio.play().catch(function(error) {
@@ -31,21 +15,6 @@ window.addEventListener('load', tryPlayMusic);
 ['click', 'touchstart', 'keydown'].forEach(function(eventName) {
     document.addEventListener(eventName, tryPlayMusic, { once: true });
 });
-
-/*
- * [COMMENTED OUT - REMOVED FROM MAIN LOGIC] Original click listener:
- * document.addEventListener('click', function() {
- *     var audio = document.getElementById('bg-music');
- *     if (audio && audio.paused) {
- *         audio.play().catch(function(error) {
- *             console.log("Unable to play audio: ", error);
- *         });
- *     }
- * }, { once: true }); // Run only on the first click
- */
-=======
-}, { once: true }); // Run only on the first click
->>>>>>> 96cda8f339be2f8a55abb37035516e34b27272d0
 
 /*
  * RequestAnimationFrame polyfill
@@ -78,7 +47,19 @@ window.addEventListener('load', tryPlayMusic);
 })();
 
 /*
+ * General configuration for the outline heart effect (pinkboard)
+ */
+var settings = {
+  particles: {
+    length: 500, // Maximum amount of particles
+    duration: 2, // Particle duration in seconds
+    velocity: 100, // Particle velocity in pixels/sec
+    effect: -0.75, // Motion effect coefficient
+    size: 30, // Particle size in pixels
+  },
+};
 
+/*
  * Point class
  */
 var Point = (function () {
@@ -291,11 +272,8 @@ var ParticlePool = (function () {
   }, 10);
 })(document.getElementById("pinkboard"));
 
-
 /*
->>>>>>> 4b492e7bf85a59513bf11305e6fd108d13f3c320
- * Floating "i love you" text effect handler & fixed canvas blur issue on resize
->>>>>>> 96cda8f339be2f8a55abb37035516e34b27272d0
+ * Floating "i love you" text effect handler - more items, random appearance & half size (+5px font size)
  */
 const colors = [
   "#eec996", "#8fb7d3", "#b7d4c6", "#c3bedd", "#f1d5e4",
@@ -313,20 +291,6 @@ var hearts = [];
 const totalHearts = 250;
 
 function Heart() {
-  /*
-   * [COMMENTED OUT - REMOVED] Original initialization before switching to random reset:
-   * this.x = Math.random() * ww;
-   * this.y = Math.random() * wh;
-   * this.opacity = Math.random() * 0.5 + 0.5;
-   * this.vel = {
-   *   x: (Math.random() - 0.5) * 4,
-   *   y: (Math.random() - 0.5) * 4,
-   * };
-   * this.targetScale = Math.random() * 0.15 + 0.02;
-   * this.scale = this.targetScale * Math.random();
-   * this.width = 473.8;
-   * this.height = 408.6;
-   */
   this.width = 236.9;
   this.height = 204.3;
   this.reset(true);
@@ -337,11 +301,6 @@ Heart.prototype.reset = function (initial) {
   this.y = Math.random() * wh;
   this.opacity = Math.random() * 0.5 + 0.5;
   this.colorIndex = Math.floor(Math.random() * colors.length);
-
-function Heart() {
-  this.x = Math.random() * ww;
-  this.y = Math.random() * wh;
-  this.opacity = Math.random() * 0.5 + 0.5;
   this.vel = {
     x: (Math.random() - 0.5) * 4,
     y: (Math.random() - 0.5) * 4,
@@ -349,11 +308,6 @@ function Heart() {
   this.targetScale = Math.random() * 0.075 + 0.01;
   this.scale = initial ? this.targetScale * Math.random() : 0.005;
 };
-  this.targetScale = Math.random() * 0.15 + 0.02;
-  this.scale = this.targetScale * Math.random();
-  this.width = 473.8;
-  this.height = 408.6;
-}
 
 Heart.prototype.update = function () {
   this.x += this.vel.x;
@@ -367,15 +321,6 @@ Heart.prototype.update = function () {
     this.y + this.height < 0
   ) {
     this.reset(false);
-
-  this.scale += (this.targetScale - this.scale) * 0.01;
-  if (this.x - this.width > ww || this.x + this.width < 0) {
-    this.scale = 0;
-    this.x = Math.random() * ww;
-  }
-  if (this.y - this.height > wh || this.y + this.height < 0) {
-    this.scale = 0;
-    this.y = Math.random() * wh;
   }
 };
 
@@ -384,9 +329,6 @@ Heart.prototype.draw = function (i) {
   ctxText.globalAlpha = this.opacity;
   ctxText.font = `${90 * this.scale + 5}px "微软雅黑"`;
   ctxText.fillStyle = colors[this.colorIndex];
-  ctxText.globalAlpha = this.opacity;
-  ctxText.font = `${180 * this.scale}px "微软雅黑"`;
-  ctxText.fillStyle = colors[i % 18];
   ctxText.fillText(
     "💗i love you💗",
     this.x - this.width * 0.5,
@@ -395,7 +337,6 @@ Heart.prototype.draw = function (i) {
     this.height
   );
   ctxText.restore();
-
 };
 
 function initTextCanvas() {
@@ -403,15 +344,7 @@ function initTextCanvas() {
   canvasText.height = wh;
   hearts = [];
   requestAnimationFrame(renderTextCanvas);
-  /*
-   * [COMMENTED OUT - REMOVED] Original loop with fixed count of 100:
-   * for (var i = 0; i < 100; i++) {
-   *   hearts.push(new Heart());
-   * }
-   */
   for (var i = 0; i < totalHearts; i++) {
-  requestAnimationFrame(renderTextCanvas);
-  for (var i = 0; i < 100; i++) {
     hearts.push(new Heart());
   }
 }
@@ -434,128 +367,3 @@ window.addEventListener("resize", function () {
   canvasText.width = ww;
   canvasText.height = wh;
 });
-
-/*
- * [COMMENTED OUT - REMOVED FROM MAIN LOGIC] Music playlist modal controller and track selection handler:
- * const musicBtn = document.getElementById("music-btn");
- * const musicModal = document.getElementById("music-modal");
- * const closeModal = document.getElementById("close-modal");
- * const playlistItems = document.querySelectorAll("#playlist li");
- * const audioPlayer = document.getElementById("bg-music");
- *
- * // Open music playlist modal when clicking the button
- * if (musicBtn && musicModal) {
- *   musicBtn.addEventListener("click", function () {
- *     musicModal.style.display = "block";
- *   });
- * }
- *
- * // Close music playlist modal when clicking the close (X) button
- * if (closeModal && musicModal) {
- *   closeModal.addEventListener("click", function () {
- *     musicModal.style.display = "none";
- *   });
- * }
- *
- * // Close modal when clicking outside the modal content area
- * if (musicModal) {
- *   window.addEventListener("click", function (event) {
- *     if (event.target == musicModal) {
- *       musicModal.style.display = "none";
- *     }
- *   });
- * }
- *
- * // Select and play a track from the playlist
- * if (playlistItems.length > 0 && audioPlayer) {
- *   playlistItems.forEach(function (item) {
- *     item.addEventListener("click", function () {
- *       const src = this.getAttribute("data-src");
- *       audioPlayer.src = src;
- *       audioPlayer.play().catch(function(error) {
- *           console.log("Unable to play audio: ", error);
- *       });
- *       if (musicModal) {
- *         musicModal.style.display = "none"; // Close modal after selection
- *       }
- *     });
- *   });
- * }
- */
-
-/*
- * Music playlist modal controller and track selection handler
- */
-const musicBtn = document.getElementById("music-btn");
-const musicModal = document.getElementById("music-modal");
-const closeModal = document.getElementById("close-modal");
-const playlistItems = document.querySelectorAll("#playlist li");
-const audioPlayer = document.getElementById("bg-music");
-
-// Open music playlist modal when clicking the button
-if (musicBtn && musicModal) {
-  musicBtn.addEventListener("click", function () {
-    musicModal.style.display = "block";
-  });
-}
-
-// Close music playlist modal when clicking the close (X) button
-if (closeModal && musicModal) {
-  closeModal.addEventListener("click", function () {
-    musicModal.style.display = "none";
-  });
-}
-
-// Close modal when clicking outside the modal content area
-if (musicModal) {
-  window.addEventListener("click", function (event) {
-    if (event.target == musicModal) {
-      musicModal.style.display = "none";
-    }
-  });
-}
-
-// Select and play a track from the playlist
-if (playlistItems.length > 0 && audioPlayer) {
-  playlistItems.forEach(function (item) {
-    item.addEventListener("click", function () {
-      const src = this.getAttribute("data-src");
-      audioPlayer.src = src;
-      audioPlayer.play().catch(function(error) {
-          console.log("Unable to play audio: ", error);
-      });
-      if (musicModal) {
-        musicModal.style.display = "none"; // Close modal after selection
-      }
-    });
-  });
-}
-
-musicBtn.addEventListener("click", function () {
-  musicModal.style.display = "block";
-});
-
-// Close music playlist modal when clicking the close (X) button
-closeModal.addEventListener("click", function () {
-  musicModal.style.display = "none";
-});
-
-// Close modal when clicking outside the modal content area
-window.addEventListener("click", function (event) {
-  if (event.target == musicModal) {
-    musicModal.style.display = "none";
-  }
-});
-
-// Select and play a track from the playlist
-playlistItems.forEach(function (item) {
-  item.addEventListener("click", function () {
-    const src = this.getAttribute("data-src");
-    audioPlayer.src = src;
-    audioPlayer.play().catch(function(error) {
-        console.log("Unable to play audio: ", error);
-    });
-    musicModal.style.display = "none"; // Close modal after selection
-  });
-});
-
