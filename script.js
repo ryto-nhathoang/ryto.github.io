@@ -62,7 +62,9 @@ var settings = {
 */
 
 /*
- * Floating "i love you" 3D Interactive Text Space (360-degree rotation via mouse or touch)
+ * Floating "i love you" 3D Interactive Text Space
+ * - Drag mouse or touch to rotate 360 degrees
+ * - Press / tap screen to morph text into a 3D heart shape
  */
 const colors = [
   "#eec996", "#8fb7d3", "#b7d4c6", "#c3bedd", "#f1d5e4",
@@ -78,10 +80,16 @@ var ww = window.innerWidth;
 var wh = window.innerHeight;
 var hearts = [];
 
-// 3D spherical space configuration around the viewer
-const totalHearts = 240;
-const spaceRadius = 900;   // Radius of the 3D space containing the text items
-var fov = 480;             // Camera field of view / focal length (adjustable with scroll wheel)
+// 3D space configuration
+const totalHearts = 260;
+const spaceRadius = 900;   // Radius of the 3D space containing floating text
+var fov = 480;             // Camera focal length (adjustable with scroll wheel)
+
+// Morph state: true when user presses/holds on the screen to form a heart
+var isHeartMode = false;
+var pointerDownX = 0;
+var pointerDownY = 0;
+var movedDistance = 0;
 
 // Camera rotation state controlled by the user
 var rotX = 0;              // Pitch angle (up / down)
@@ -92,9 +100,43 @@ var isDragging = false;
 var lastMouseX = 0;
 var lastMouseY = 0;
 
-// --- Mouse drag events on desktop ---
+// Compute a point on a 3D heart surface/volume
+function getHeartPoint3D(scaleFactor) {
+  var t = Math.random() * Math.PI * 2;
+  // Slight depth variation for 3D volume
+  var depthLayer = (Math.random() - 0.5) * 140;
+
+  var hx = 16 * Math.pow(Math.sin(t), 3);
+  var hy = -(
+    13 * Math.cos(t) -
+    5 * Math.cos(2 * t) -
+    2 * Math.cos(3 * t) -
+    Math.cos(4 * t)
+  );
+
+  // Fill slightly inside the heart contour so dense text forms a clear heart shape
+  var fill = 0.72 + Math.random() * 0.28;
+
+  return {
+    x: hx * scaleFactor * fill,
+    y: hy * scaleFactor * fill,
+    z: depthLayer * fill
+  };
+}
+
+function toggleHeartMode() {
+  isHeartMode = !isHeartMode;
+  for (var i = 0; i < hearts.length; i++) {
+    hearts[i].updateTarget();
+  }
+}
+
+// --- Mouse drag & press-to-heart events on desktop ---
 canvasText.addEventListener("mousedown", function (e) {
   isDragging = true;
+  pointerDownX = e.clientX;
+  pointerDownY = e.clientY;
+  movedDistance = 0;
   lastMouseX = e.clientX;
   lastMouseY = e.clientY;
   velRotX = 0;
@@ -105,6 +147,7 @@ window.addEventListener("mousemove", function (e) {
   if (!isDragging) return;
   var dx = e.clientX - lastMouseX;
   var dy = e.clientY - lastMouseY;
+  movedDistance += Math.hypot(dx, dy);
 
   velRotY = dx * 0.005;
   velRotX = dy * 0.005;
@@ -116,13 +159,22 @@ window.addEventListener("mousemove", function (e) {
 });
 
 window.addEventListener("mouseup", function () {
+  if (!isDragging) return;
   isDragging = false;
+
+  // Treat a quick press/click (without dragging) as toggling heart formation
+  if (movedDistance < 8) {
+    toggleHeartMode();
+  }
 });
 
-// --- Touch drag events on mobile devices ---
+// --- Touch drag & tap-to-heart events on mobile devices ---
 canvasText.addEventListener("touchstart", function (e) {
   if (e.touches.length === 1) {
     isDragging = true;
+    pointerDownX = e.touches[0].clientX;
+    pointerDownY = e.touches[0].clientY;
+    movedDistance = 0;
     lastMouseX = e.touches[0].clientX;
     lastMouseY = e.touches[0].clientY;
     velRotX = 0;
@@ -134,6 +186,7 @@ window.addEventListener("touchmove", function (e) {
   if (!isDragging || e.touches.length !== 1) return;
   var dx = e.touches[0].clientX - lastMouseX;
   var dy = e.touches[0].clientY - lastMouseY;
+  movedDistance += Math.hypot(dx, dy);
 
   velRotY = dx * 0.006;
   velRotX = dy * 0.006;
@@ -145,7 +198,12 @@ window.addEventListener("touchmove", function (e) {
 }, { passive: false });
 
 window.addEventListener("touchend", function () {
+  if (!isDragging) return;
   isDragging = false;
+
+  if (movedDistance < 10) {
+    toggleHeartMode();
+  }
 });
 
 // --- Mouse wheel to zoom in / out ---
@@ -156,10 +214,17 @@ canvasText.addEventListener("wheel", function (e) {
 }, { passive: false });
 
 function Heart3D() {
-  this.reset();
+  this.initSpacePosition();
+  this.x = this.spaceX;
+  this.y = this.spaceY;
+  this.z = this.spaceZ;
+  this.baseSize = Math.random() * 11 + 13;
+  this.colorIndex = Math.floor(Math.random() * colors.length);
+  this.maxOpacity = Math.random() * 0.3 + 0.7;
+  this.updateTarget();
 }
 
-Heart3D.prototype.reset = function () {
+Heart3D.prototype.initSpacePosition = function () {
   // Distribute text evenly inside a 3D sphere around the center
   var u = Math.random();
   var v = Math.random();
@@ -167,31 +232,56 @@ Heart3D.prototype.reset = function () {
   var phi = Math.acos(2.0 * v - 1.0);
   var r = Math.cbrt(Math.random()) * spaceRadius;
 
-  this.x = r * Math.sin(phi) * Math.cos(theta);
-  this.y = r * Math.sin(phi) * Math.sin(theta);
-  this.z = r * Math.cos(phi);
+  this.spaceX = r * Math.sin(phi) * Math.cos(theta);
+  this.spaceY = r * Math.sin(phi) * Math.sin(theta);
+  this.spaceZ = r * Math.cos(phi);
 
-  // Gentle floating velocity in 3D space
-  this.vx = (Math.random() - 0.5) * 0.6;
-  this.vy = (Math.random() - 0.5) * 0.6;
-  this.vz = (Math.random() - 0.5) * 0.6;
+  this.vx = (Math.random() - 0.5) * 0.5;
+  this.vy = (Math.random() - 0.5) * 0.5;
+  this.vz = (Math.random() - 0.5) * 0.5;
+};
 
-  this.baseSize = Math.random() * 12 + 14;
-  this.colorIndex = Math.floor(Math.random() * colors.length);
-  this.maxOpacity = Math.random() * 0.35 + 0.65;
+Heart3D.prototype.updateTarget = function () {
+  if (isHeartMode) {
+    var heartScale = Math.min(ww, wh) * 0.022;
+    var pt = getHeartPoint3D(heartScale);
+    this.targetX = pt.x;
+    this.targetY = pt.y;
+    this.targetZ = pt.z;
+  } else {
+    this.initSpacePosition();
+    this.targetX = this.spaceX;
+    this.targetY = this.spaceY;
+    this.targetZ = this.spaceZ;
+  }
 };
 
 Heart3D.prototype.update = function () {
-  this.x += this.vx;
-  this.y += this.vy;
-  this.z += this.vz;
+  if (isHeartMode) {
+    // Smoothly morph text positions into the 3D heart shape
+    this.x += (this.targetX - this.x) * 0.07;
+    this.y += (this.targetY - this.y) * 0.07;
+    this.z += (this.targetZ - this.z) * 0.07;
+  } else {
+    // Drift gently in 3D space
+    this.spaceX += this.vx;
+    this.spaceY += this.vy;
+    this.spaceZ += this.vz;
 
-  // Keep text items bounded within the 3D space radius
-  var dist = Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
-  if (dist > spaceRadius) {
-    this.vx = -this.vx;
-    this.vy = -this.vy;
-    this.vz = -this.vz;
+    var dist = Math.sqrt(
+      this.spaceX * this.spaceX +
+      this.spaceY * this.spaceY +
+      this.spaceZ * this.spaceZ
+    );
+    if (dist > spaceRadius) {
+      this.vx = -this.vx;
+      this.vy = -this.vy;
+      this.vz = -this.vz;
+    }
+
+    this.x += (this.spaceX - this.x) * 0.05;
+    this.y += (this.spaceY - this.y) * 0.05;
+    this.z += (this.spaceZ - this.z) * 0.05;
   }
 };
 
@@ -221,10 +311,13 @@ Heart3D.prototype.draw = function () {
     return;
   }
 
-  // Adjust opacity based on distance from the viewer
   var depthFactor = (spaceRadius - this.rz) / (spaceRadius * 2);
-  var alpha = Math.max(0.15, Math.min(1, depthFactor * 1.3)) * this.maxOpacity;
-  var fontSize = Math.max(7, this.baseSize * scale);
+  var alpha = isHeartMode
+    ? this.maxOpacity
+    : Math.max(0.15, Math.min(1, depthFactor * 1.3)) * this.maxOpacity;
+
+  var sizeBoost = isHeartMode ? 0.78 : 1.0;
+  var fontSize = Math.max(6, this.baseSize * scale * sizeBoost);
 
   ctxText.save();
   ctxText.globalAlpha = alpha;
@@ -233,9 +326,9 @@ Heart3D.prototype.draw = function () {
   ctxText.textAlign = "center";
   ctxText.textBaseline = "middle";
 
-  if (scale > 0.75) {
+  if (isHeartMode || scale > 0.75) {
     ctxText.shadowColor = colors[this.colorIndex];
-    ctxText.shadowBlur = 8 * scale;
+    ctxText.shadowBlur = (isHeartMode ? 10 : 8) * scale;
   }
 
   ctxText.fillText("💗i love you💗", screenX, screenY);
@@ -293,4 +386,9 @@ window.addEventListener("resize", function () {
   wh = window.innerHeight;
   canvasText.width = ww;
   canvasText.height = wh;
+  if (isHeartMode) {
+    for (var i = 0; i < hearts.length; i++) {
+      hearts[i].updateTarget();
+    }
+  }
 });
