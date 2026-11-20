@@ -1,7 +1,5 @@
-<<<<<<< HEAD
 // Try to autoplay background music immediately, and fallback on first user interaction
 function tryPlayMusic() {
-=======
 
 /*
  * General configuration for the outline heart effect (pinkboard)
@@ -18,14 +16,12 @@ var settings = {
 
 // Automatically play background music when the user interacts with the page (click/touch)
 document.addEventListener('click', function() {
->>>>>>> 96cda8f339be2f8a55abb37035516e34b27272d0
     var audio = document.getElementById('bg-music');
     if (audio && audio.paused) {
         audio.play().catch(function(error) {
             console.log("Unable to play audio: ", error);
         });
     }
-<<<<<<< HEAD
 }
 
 tryPlayMusic();
@@ -82,11 +78,7 @@ window.addEventListener('load', tryPlayMusic);
 })();
 
 /*
-<<<<<<< HEAD
- * Floating "i love you" text effect handler - more items, random appearance & half size (+5px font size)
-=======
-<<<<<<< HEAD
-=======
+
  * Point class
  */
 var Point = (function () {
@@ -318,7 +310,6 @@ var ctxText = canvasText.getContext("2d");
 var ww = window.innerWidth;
 var wh = window.innerHeight;
 var hearts = [];
-<<<<<<< HEAD
 const totalHearts = 250;
 
 function Heart() {
@@ -346,34 +337,28 @@ Heart.prototype.reset = function (initial) {
   this.y = Math.random() * wh;
   this.opacity = Math.random() * 0.5 + 0.5;
   this.colorIndex = Math.floor(Math.random() * colors.length);
-=======
 
 function Heart() {
   this.x = Math.random() * ww;
   this.y = Math.random() * wh;
   this.opacity = Math.random() * 0.5 + 0.5;
->>>>>>> 96cda8f339be2f8a55abb37035516e34b27272d0
   this.vel = {
     x: (Math.random() - 0.5) * 4,
     y: (Math.random() - 0.5) * 4,
   };
-<<<<<<< HEAD
   this.targetScale = Math.random() * 0.075 + 0.01;
   this.scale = initial ? this.targetScale * Math.random() : 0.005;
 };
-=======
   this.targetScale = Math.random() * 0.15 + 0.02;
   this.scale = this.targetScale * Math.random();
   this.width = 473.8;
   this.height = 408.6;
 }
->>>>>>> 96cda8f339be2f8a55abb37035516e34b27272d0
 
 Heart.prototype.update = function () {
   this.x += this.vel.x;
   this.y += this.vel.y;
 
-<<<<<<< HEAD
   this.scale += (this.targetScale - this.scale) * 0.02;
   if (
     this.x - this.width > ww ||
@@ -382,7 +367,7 @@ Heart.prototype.update = function () {
     this.y + this.height < 0
   ) {
     this.reset(false);
-=======
+
   this.scale += (this.targetScale - this.scale) * 0.01;
   if (this.x - this.width > ww || this.x + this.width < 0) {
     this.scale = 0;
@@ -391,21 +376,17 @@ Heart.prototype.update = function () {
   if (this.y - this.height > wh || this.y + this.height < 0) {
     this.scale = 0;
     this.y = Math.random() * wh;
->>>>>>> 96cda8f339be2f8a55abb37035516e34b27272d0
   }
 };
 
 Heart.prototype.draw = function (i) {
-<<<<<<< HEAD
   ctxText.save();
   ctxText.globalAlpha = this.opacity;
   ctxText.font = `${90 * this.scale + 5}px "微软雅黑"`;
   ctxText.fillStyle = colors[this.colorIndex];
-=======
   ctxText.globalAlpha = this.opacity;
   ctxText.font = `${180 * this.scale}px "微软雅黑"`;
   ctxText.fillStyle = colors[i % 18];
->>>>>>> 96cda8f339be2f8a55abb37035516e34b27272d0
   ctxText.fillText(
     "💗i love you💗",
     this.x - this.width * 0.5,
@@ -413,16 +394,13 @@ Heart.prototype.draw = function (i) {
     this.width,
     this.height
   );
-<<<<<<< HEAD
   ctxText.restore();
-=======
->>>>>>> 96cda8f339be2f8a55abb37035516e34b27272d0
+
 };
 
 function initTextCanvas() {
   canvasText.width = ww;
   canvasText.height = wh;
-<<<<<<< HEAD
   hearts = [];
   requestAnimationFrame(renderTextCanvas);
   /*
@@ -432,10 +410,8 @@ function initTextCanvas() {
    * }
    */
   for (var i = 0; i < totalHearts; i++) {
-=======
   requestAnimationFrame(renderTextCanvas);
   for (var i = 0; i < 100; i++) {
->>>>>>> 96cda8f339be2f8a55abb37035516e34b27272d0
     hearts.push(new Heart());
   }
 }
@@ -459,7 +435,6 @@ window.addEventListener("resize", function () {
   canvasText.height = wh;
 });
 
-<<<<<<< HEAD
 /*
  * [COMMENTED OUT - REMOVED FROM MAIN LOGIC] Music playlist modal controller and track selection handler:
  * const musicBtn = document.getElementById("music-btn");
@@ -507,7 +482,6 @@ window.addEventListener("resize", function () {
  *   });
  * }
  */
-=======
 
 /*
  * Music playlist modal controller and track selection handler
@@ -519,7 +493,6 @@ const playlistItems = document.querySelectorAll("#playlist li");
 const audioPlayer = document.getElementById("bg-music");
 
 // Open music playlist modal when clicking the button
-<<<<<<< HEAD
 if (musicBtn && musicModal) {
   musicBtn.addEventListener("click", function () {
     musicModal.style.display = "block";
@@ -586,4 +559,3 @@ playlistItems.forEach(function (item) {
   });
 });
 
->>>>>>> 96cda8f339be2f8a55abb37035516e34b27272d0
